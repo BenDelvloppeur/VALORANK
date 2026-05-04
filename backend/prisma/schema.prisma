@@ -1,0 +1,156 @@
+// Schéma Prisma pour la plateforme de coaching Valorank.
+// Les ids `User.id` correspondent à `auth.users.id` de Supabase.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  COACH
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum ValorantRank {
+  IRON
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+  ASCENDANT
+  IMMORTAL
+  RADIANT
+}
+
+model User {
+  id        String   @id
+  email     String   @unique
+  username  String   @unique
+  avatarUrl String?
+  role      Role     @default(CLIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  coachProfile     CoachProfile?
+  bookingsAsClient Booking[]     @relation("ClientBookings")
+  reviewsWritten   Review[]      @relation("ReviewAuthor")
+  messagesSent     Message[]
+}
+
+model CoachProfile {
+  id           String       @id @default(cuid())
+  userId       String       @unique
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rank         ValorantRank
+  description  String
+  hourlyRate   Int // tarif horaire en centimes (€)
+  specialties  String[] // ex: ["AIM", "GAME_SENSE", "STRATEGY", "AGENT_MASTERY", "MENTAL"]
+  rating       Float        @default(0) // moyenne dénormalisée pour tri rapide
+  reviewsCount Int          @default(0)
+  featured     Boolean      @default(false) // "Recommandé par Valorank" — toggle admin
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  availabilities Availability[]
+  bookings       Booking[]
+  reviews        Review[]
+
+  @@index([rank, hourlyRate])
+  @@index([rating])
+  @@index([featured])
+}
+
+model Availability {
+  id       String   @id @default(cuid())
+  coachId  String
+  coach    CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  startsAt DateTime
+  endsAt   DateTime
+  isBooked Boolean  @default(false)
+
+  booking Booking?
+
+  @@index([coachId, startsAt])
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  clientId        String
+  client          User          @relation("ClientBookings", fields: [clientId], references: [id])
+  coachId         String
+  coach           CoachProfile  @relation(fields: [coachId], references: [id])
+  availabilityId  String        @unique
+  availability    Availability  @relation(fields: [availabilityId], references: [id])
+  startsAt        DateTime
+  endsAt          DateTime
+  status          BookingStatus @default(PENDING)
+  payment         PaymentStatus @default(UNPAID)
+  amount          Int // montant total payé par le client (centimes)
+  commissionCents Int           @default(0) // part conservée par la plateforme
+  payoutCents     Int           @default(0) // amount - commissionCents → reversé au coach
+  commissionRate  Float         @default(0.2) // taux figé au moment de la résa
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  review   Review?
+  messages Message[]
+
+  @@index([clientId, createdAt])
+  @@index([coachId, createdAt])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Configuration globale de la plateforme — clé/valeur JSON.
+// Permet de stocker la commission, etc. modifiables côté admin.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation("ReviewAuthor", fields: [authorId], references: [id])
+  coachId   String
+  coach     CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  rating    Int // 1..5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@index([coachId, createdAt])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([bookingId, createdAt])
+}
