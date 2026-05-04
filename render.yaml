@@ -1,0 +1,35 @@
+# Blueprint Render — déploie automatiquement le backend Valorank.
+# Tu connectes ton repo GitHub à Render, il détecte ce fichier et applique
+# la config. Tu n'as plus qu'à coller les variables d'env marquées sync:false.
+#
+# Doc : https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: valorank-api
+    runtime: node
+    region: frankfurt
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    branch: main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      # CORS_ORIGIN : on remplacera par l'URL Vercel après le 1er déploiement.
+      - key: CORS_ORIGIN
+        value: http://localhost:3000
+      # Variables sensibles : à coller dans l'UI Render au moment du déploiement.
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
