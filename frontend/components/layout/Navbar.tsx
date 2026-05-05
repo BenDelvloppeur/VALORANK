@@ -12,7 +12,9 @@ import {
   LayoutDashboard,
   ShieldCheck,
   UserPlus,
+  Sparkles,
 } from 'lucide-react';
+import { useMyApplication } from '@/lib/api/applications';
 
 const navLinks = [
   { href: '/coaches', label: 'Coachs' },
@@ -25,6 +27,11 @@ export function Navbar() {
 
   const isCoach = user?.role === 'COACH';
   const isAdmin = user?.role === 'ADMIN';
+  const isClient = user?.role === 'CLIENT';
+
+  // Affiche un bouton « Devenir coach » discret seulement pour les clients.
+  const { data: myApplication } = useMyApplication(isClient);
+  const showBecomeCoach = isClient || (!session && !needsProfile);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-md">
@@ -59,6 +66,20 @@ export function Navbar() {
                   <Button variant="ghost" size="sm">
                     <ShieldCheck className="h-4 w-4" />
                     Admin
+                  </Button>
+                </Link>
+              )}
+              {isClient && (
+                <Link href="/become-coach" className="hidden sm:inline-flex">
+                  <Button variant="ghost" size="sm">
+                    <Sparkles className="h-4 w-4 text-accent-400" />
+                    {myApplication
+                      ? myApplication.status === 'PENDING'
+                        ? 'Candidature en cours'
+                        : myApplication.status === 'REJECTED'
+                          ? 'Candidature refusée'
+                          : 'Devenir coach'
+                      : 'Devenir coach'}
                   </Button>
                 </Link>
               )}
@@ -100,6 +121,14 @@ export function Navbar() {
             </>
           ) : (
             <>
+              {showBecomeCoach && (
+                <Link href="/become-coach" className="hidden sm:inline-flex">
+                  <Button variant="ghost" size="sm">
+                    <Sparkles className="h-4 w-4 text-accent-400" />
+                    Devenir coach
+                  </Button>
+                </Link>
+              )}
               <Link href="/sign-in">
                 <Button variant="ghost" size="sm">
                   Se connecter

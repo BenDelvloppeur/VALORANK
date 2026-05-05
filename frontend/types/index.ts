@@ -105,6 +105,7 @@ export interface AdminStats {
   refundedCount: number;
   avgRating: number;
   reviewsCount: number;
+  pendingApplications: number;
   completed: number;
   commissionRate: number;
 }
@@ -207,4 +208,37 @@ export interface CoachClientRow {
 export interface CoachReview extends Review {
   author: Pick<User, 'id' | 'username' | 'avatarUrl'>;
   booking: Pick<Booking, 'id' | 'startsAt'>;
+}
+
+// ─── Candidatures coach ─────────────────────────────────────────────────────
+
+export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface CoachApplication {
+  id: string;
+  userId: string;
+  rank: ValorantRank;
+  trackerUrl: string | null;
+  screenshotUrl: string | null;
+  description: string;
+  experience: string | null;
+  hourlyRate: number;
+  specialties: string[];
+  status: ApplicationStatus;
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: Pick<User, 'id' | 'username' | 'email' | 'avatarUrl'>;
+  reviewedBy?: Pick<User, 'id' | 'username'> | null;
+}
+
+export interface ApplicationInput {
+  rank: ValorantRank;
+  trackerUrl?: string;
+  screenshotUrl?: string;
+  description: string;
+  experience?: string;
+  hourlyRate: number;
+  specialties: string[];
 }

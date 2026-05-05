@@ -29,6 +29,12 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum ValorantRank {
   IRON
   BRONZE
@@ -50,10 +56,37 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  coachProfile     CoachProfile?
-  bookingsAsClient Booking[]     @relation("ClientBookings")
-  reviewsWritten   Review[]      @relation("ReviewAuthor")
-  messagesSent     Message[]
+  coachProfile         CoachProfile?
+  bookingsAsClient     Booking[]          @relation("ClientBookings")
+  reviewsWritten       Review[]           @relation("ReviewAuthor")
+  messagesSent         Message[]
+  coachApplication     CoachApplication?
+  reviewedApplications CoachApplication[] @relation("AppReviewer")
+}
+
+// Demande de promotion en coach soumise par un utilisateur (CLIENT) et examinée
+// par un admin. Une fois APPROVED, le user passe en COACH et un CoachProfile est
+// créé automatiquement à partir des valeurs de la candidature.
+model CoachApplication {
+  id            String            @id @default(cuid())
+  userId        String            @unique
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rank          ValorantRank
+  trackerUrl    String?
+  screenshotUrl String?
+  description   String
+  experience    String?
+  hourlyRate    Int // tarif horaire proposé en centimes
+  specialties   String[]
+  status        ApplicationStatus @default(PENDING)
+  reviewNote    String?
+  reviewedById  String?
+  reviewedBy    User?             @relation("AppReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([status, createdAt])
 }
 
 model CoachProfile {

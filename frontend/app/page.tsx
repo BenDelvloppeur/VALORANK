@@ -14,7 +14,13 @@ import {
   Zap,
   Star,
   ArrowRight,
+  Sparkles,
+  Crown,
+  CheckCircle2,
+  ChevronDown,
+  Quote,
 } from 'lucide-react';
+import { useState } from 'react';
 
 const FEATURES = [
   {
@@ -90,8 +96,9 @@ export default function HomePage() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/sign-up">
+            <Link href="/become-coach">
               <Button size="lg" variant="outline">
+                <Sparkles className="h-4 w-4 text-accent-400" />
                 Devenir coach
               </Button>
             </Link>
@@ -172,6 +179,117 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* TESTIMONIALS */}
+      <section className="border-t border-border">
+        <div className="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6">
+          <div className="mb-10 text-center">
+            <Quote className="mx-auto mb-3 h-7 w-7 text-primary" />
+            <h2 className="font-display text-3xl">Ils ont fait sauter leur plafond</h2>
+            <p className="mt-2 text-muted">
+              Quelques retours de joueurs qui ont changé de palier grâce à Valorank.
+            </p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
+            {TESTIMONIALS.map((t, i) => (
+              <motion.div
+                key={t.author}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                className="rounded-xl border border-border bg-surface p-6"
+              >
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <Star key={idx} className="h-4 w-4 fill-gold text-gold" />
+                  ))}
+                </div>
+                <p className="mt-3 text-sm text-foreground/85">&ldquo;{t.quote}&rdquo;</p>
+                <div className="mt-4 flex items-center gap-3 border-t border-border pt-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary-200">
+                    {t.author.charAt(0)}
+                  </div>
+                  <div className="text-xs">
+                    <div className="font-semibold">{t.author}</div>
+                    <div className="text-muted">
+                      {t.from} → <span className="text-success">{t.to}</span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* COACH RECRUITMENT */}
+      <section className="border-t border-border bg-gradient-to-b from-accent/5 via-transparent to-transparent">
+        <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-medium text-accent-400">
+              <Sparkles className="h-3.5 w-3.5" />
+              Pour les joueurs expérimentés
+            </div>
+            <h2 className="mt-4 font-display text-3xl sm:text-4xl">
+              Tu es <span className="gradient-text">Diamond+</span> ?<br />
+              Deviens coach Valorank.
+            </h2>
+            <p className="mt-3 text-muted">
+              Partage ton expertise, fixe ton tarif horaire, gère tes créneaux. On s'occupe du
+              paiement, de la mise en relation et du chat. Tu te concentres sur le coaching.
+            </p>
+            <ul className="mt-5 space-y-2 text-sm">
+              {[
+                'Validation rapide via tracker.gg ou capture d\'écran',
+                'Tu fixes ton tarif (la plupart entre 20 et 60 €/h)',
+                'Liberté totale sur ton planning',
+                'Mise en avant si tu fais de bons scores',
+              ].map((line) => (
+                <li key={line} className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+                  {line}
+                </li>
+              ))}
+            </ul>
+            <Link href="/become-coach" className="mt-6 inline-block">
+              <Button size="lg" variant="accent">
+                <Crown className="h-4 w-4" />
+                Postuler comme coach
+              </Button>
+            </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              { value: '3 min', label: 'pour candidater' },
+              { value: '24-48h', label: 'délai d\'examen' },
+              { value: '~80%', label: 'reversé au coach' },
+              { value: '100%', label: 'liberté de planning' },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="rounded-xl border border-border bg-surface p-5 text-center"
+              >
+                <div className="font-display text-3xl text-accent-400">{s.value}</div>
+                <div className="mt-1 text-xs uppercase tracking-wider text-muted">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="border-t border-border">
+        <div className="mx-auto w-full max-w-3xl px-4 py-20 sm:px-6">
+          <div className="mb-10 text-center">
+            <h2 className="font-display text-3xl">Questions fréquentes</h2>
+            <p className="mt-2 text-muted">Les réponses qu'on nous donne le plus souvent.</p>
+          </div>
+          <Faq />
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="border-t border-border">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 px-4 py-20 text-center sm:px-6">
@@ -190,5 +308,79 @@ export default function HomePage() {
         </div>
       </section>
     </div>
+  );
+}
+
+const TESTIMONIALS = [
+  {
+    author: 'NoxBlade',
+    from: 'Gold 2',
+    to: 'Diamond 1',
+    quote:
+      'Trois sessions avec un Radiant et mon crosshair placement a complètement changé. Je gagne des duels que je perdais avant.',
+  },
+  {
+    author: 'Aelia',
+    from: 'Silver 3',
+    to: 'Plat 2',
+    quote:
+      'Je ne savais plus comment progresser. Mon coach a démonté mes démos avec moi, j\'ai compris mes erreurs récurrentes.',
+  },
+  {
+    author: 'Krios',
+    from: 'Plat 3',
+    to: 'Asc 1',
+    quote:
+      'Le coach IGL m\'a appris à driver mon équipe. Le passage en Ascendant s\'est fait naturellement après 5 sessions.',
+  },
+];
+
+const FAQ_ITEMS = [
+  {
+    q: 'Comment se passe une session ?',
+    a: 'Tu réserves un créneau, le coach te contacte via le chat de la plateforme. Vous convenez du format (review de démos, jeu en duo, training Aim Lab…) et c\'est parti.',
+  },
+  {
+    q: 'Puis-je annuler ?',
+    a: 'Oui, tant que la session n\'est pas confirmée par le coach. Une fois confirmée, l\'annulation se discute directement avec lui via le chat.',
+  },
+  {
+    q: 'Combien coûte une session ?',
+    a: 'Chaque coach fixe son tarif horaire. Compte entre 15 € pour un Plat et 50-70 € pour un Radiant. Tu peux filtrer par budget dans la liste.',
+  },
+  {
+    q: 'Le paiement est-il sécurisé ?',
+    a: 'Oui. Le paiement est bloqué le temps de la session, le coach n\'est crédité qu\'à la fin. Si quelque chose se passe mal, tu peux demander un remboursement.',
+  },
+  {
+    q: 'Comment devenir coach ?',
+    a: 'Crée un compte, va sur « Devenir coach » et remplis le formulaire (rang, lien tracker.gg ou capture, description). Un admin examine ton dossier en 24-48h.',
+  },
+];
+
+function Faq() {
+  const [open, setOpen] = useState<number | null>(0);
+  return (
+    <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+      {FAQ_ITEMS.map((item, i) => (
+        <li key={item.q}>
+          <button
+            type="button"
+            onClick={() => setOpen(open === i ? null : i)}
+            className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-surface-2"
+          >
+            <span className="font-medium">{item.q}</span>
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-muted transition-transform ${
+                open === i ? 'rotate-180 text-primary' : ''
+              }`}
+            />
+          </button>
+          {open === i && (
+            <div className="px-5 pb-4 text-sm text-muted">{item.a}</div>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }

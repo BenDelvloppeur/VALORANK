@@ -11,7 +11,9 @@ import {
   AlertTriangle,
   RefreshCcw,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
+import Link from 'next/link';
 import { StatCard } from './StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -36,6 +38,38 @@ export function OverviewPanel() {
 
   return (
     <div className="space-y-6">
+      {/* Bandeau candidatures en attente */}
+      {stats.pendingApplications > 0 && (
+        <Link
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            const tab = document.querySelector<HTMLButtonElement>(
+              'button[type="button"][class*="bg-primary"][class*="text-primary-200"]',
+            );
+            // Fallback: tous les onglets sont des boutons, on cherche celui qui contient "Candidatures"
+            const all = Array.from(document.querySelectorAll('button'));
+            const target = all.find((b) =>
+              b.textContent?.includes('Candidatures'),
+            );
+            target?.click();
+            tab?.blur();
+          }}
+          className="flex items-center gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4 transition-colors hover:bg-warning/15"
+        >
+          <Sparkles className="h-5 w-5 text-warning" />
+          <div className="flex-1">
+            <div className="font-semibold text-warning">
+              {stats.pendingApplications} candidature
+              {stats.pendingApplications > 1 ? 's' : ''} coach en attente d'examen
+            </div>
+            <div className="text-xs text-muted">
+              Va dans l'onglet « Candidatures » pour les examiner.
+            </div>
+          </div>
+        </Link>
+      )}
+
       {/* KPIs principaux */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard

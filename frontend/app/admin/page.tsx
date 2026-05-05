@@ -12,6 +12,8 @@ import { ConversationsList } from '@/components/admin/ConversationsList';
 import { ReviewsPanel } from '@/components/admin/ReviewsPanel';
 import { FinancePanel } from '@/components/admin/FinancePanel';
 import { SettingsPanel } from '@/components/admin/SettingsPanel';
+import { ApplicationsPanel } from '@/components/admin/ApplicationsPanel';
+import { useAdminStats } from '@/lib/api/admin';
 import {
   ShieldCheck,
   Users,
@@ -21,11 +23,13 @@ import {
   TrendingUp,
   Settings,
   LayoutDashboard,
+  Sparkles,
 } from 'lucide-react';
 
 export default function AdminPage() {
   const router = useRouter();
   const { data: me, isLoading: loadingMe } = useMe();
+  const { data: stats } = useAdminStats();
 
   useEffect(() => {
     if (!loadingMe && me && me.role !== 'ADMIN') {
@@ -66,6 +70,14 @@ export default function AdminPage() {
           <TabsTrigger value="bookings" icon={<MessageSquare className="h-4 w-4" />}>
             Réservations & chats
           </TabsTrigger>
+          <TabsTrigger value="applications" icon={<Sparkles className="h-4 w-4" />}>
+            Candidatures
+            {stats && stats.pendingApplications > 0 && (
+              <span className="ml-1 rounded-full bg-warning/20 px-1.5 py-0.5 text-[10px] font-bold text-warning">
+                {stats.pendingApplications}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="reviews" icon={<Star className="h-4 w-4" />}>
             Avis
           </TabsTrigger>
@@ -88,6 +100,9 @@ export default function AdminPage() {
         </TabsContent>
         <TabsContent value="bookings">
           <ConversationsList />
+        </TabsContent>
+        <TabsContent value="applications">
+          <ApplicationsPanel />
         </TabsContent>
         <TabsContent value="reviews">
           <ReviewsPanel />

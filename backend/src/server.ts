@@ -13,6 +13,7 @@ import bookingsRoutes from './modules/bookings/bookings.routes.js';
 import reviewsRoutes from './modules/reviews/reviews.routes.js';
 import messagesRoutes from './modules/messages/messages.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
+import applicationsRoutes from './modules/applications/applications.routes.js';
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use('/bookings', bookingsRoutes);
 app.use('/reviews', reviewsRoutes);
 app.use('/messages', messagesRoutes);
 app.use('/admin', adminRoutes);
+app.use('/applications', applicationsRoutes);
 
 app.use((_req, _res, next) => next(HttpError.notFound('Route inexistante')));
 app.use(errorHandler);

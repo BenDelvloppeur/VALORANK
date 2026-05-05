@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { BookingStatus, PaymentStatus, Role, ValorantRank } from '@prisma/client';
+import {
+  ApplicationStatus,
+  BookingStatus,
+  PaymentStatus,
+  Role,
+  ValorantRank,
+} from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
@@ -364,6 +370,7 @@ router.get(
       paidAgg30,
       refundedAgg,
       reviewsAgg,
+      pendingApplications,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: Role.CLIENT } }),
@@ -391,6 +398,7 @@ router.get(
         _count: true,
       }),
       prisma.review.aggregate({ _avg: { rating: true }, _count: true }),
+      prisma.coachApplication.count({ where: { status: ApplicationStatus.PENDING } }),
     ]);
 
     const commissionRate = await getCommissionRate();
@@ -415,6 +423,7 @@ router.get(
       refundedCount: refundedAgg._count,
       avgRating: reviewsAgg._avg.rating ?? 0,
       reviewsCount: reviewsAgg._count,
+      pendingApplications,
       // pour rétro-compat avec /admin (anciennes propriétés)
       completed,
       commissionRate,
@@ -479,6 +488,99 @@ router.get(
       }
     }
     res.json(Array.from(buckets.values()));
+  }),
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COACH APPLICATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.get(
+  '/applications',
+  asyncHandler(async (req, res) => {
+    const status = req.query.status as ApplicationStatus | undefined;
+    const where = status ? { status } : {};
+    const applications = await prisma.coachApplication.findMany({
+      where,
+      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+      include: {
+        user: { select: { id: true, username: true, email: true, avatarUrl: true } },
+        reviewedBy: { select: { id: true, username: true } },
+      },
+    });
+    res.json(applications);
+  }),
+);
+
+const ReviewSchema = z.object({
+  status: z.enum([ApplicationStatus.APPROVED, ApplicationStatus.REJECTED]),
+  reviewNote: z.string().max(1000).optional(),
+});
+
+// PATCH /admin/applications/:id — accepter ou refuser une candidature.
+// Sur APPROVED : promote user → COACH + crée CoachProfile à partir de la candidature.
+router.patch(
+  '/applications/:id',
+  validate(ReviewSchema),
+  asyncHandler(async (req, res) => {
+    const id = req.params.id!;
+    const { status, reviewNote } = req.body as z.infer<typeof ReviewSchema>;
+    const application = await prisma.coachApplication.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+    if (!application) throw HttpError.notFound('Candidature introuvable');
+    if (application.status !== ApplicationStatus.PENDING) {
+      throw HttpError.badRequest('Cette candidature a déjà été traitée');
+    }
+
+    const adminId = req.user!.id;
+
+    if (status === ApplicationStatus.APPROVED) {
+      await prisma.$transaction(async (tx) => {
+        await tx.coachApplication.update({
+          where: { id },
+          data: {
+            status: ApplicationStatus.APPROVED,
+            reviewNote,
+            reviewedById: adminId,
+            reviewedAt: new Date(),
+          },
+        });
+        await tx.user.update({
+          where: { id: application.userId },
+          data: { role: Role.COACH },
+        });
+        await tx.coachProfile.upsert({
+          where: { userId: application.userId },
+          update: {
+            rank: application.rank,
+            description: application.description,
+            hourlyRate: application.hourlyRate,
+            specialties: application.specialties,
+          },
+          create: {
+            userId: application.userId,
+            rank: application.rank,
+            description: application.description,
+            hourlyRate: application.hourlyRate,
+            specialties: application.specialties,
+          },
+        });
+      });
+    } else {
+      await prisma.coachApplication.update({
+        where: { id },
+        data: {
+          status: ApplicationStatus.REJECTED,
+          reviewNote,
+          reviewedById: adminId,
+          reviewedAt: new Date(),
+        },
+      });
+    }
+
+    res.json({ ok: true });
   }),
 );
 
